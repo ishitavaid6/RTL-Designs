@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module stimulus;
 
 reg  [7:1] in;
