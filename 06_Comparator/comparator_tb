@@ -1,0 +1,42 @@
+module stimulus;
+reg [3:0] a;
+reg [3:0] b;
+wire a_gt_b;
+wire a_lt_b;
+wire a_eq_b;
+
+comparator DUT(
+.a(a),
+.b(b),
+.a_gt_b(a_gt_b),
+.a_lt_b(a_lt_b),
+.a_eq_b(a_eq_b) );
+
+initial begin
+$display("Time\tA\tB\ta>b\ta<b\ta=b");
+$monitor("%0t\t%bt%b\t%b\t%b\t%b",$time,a,b,a_gt_b,a_lt_b,a_eq_b);
+a = 4'b0000; b = 4'b0000;
+#10;
+a = 4'b0001; b = 4'b0000;
+#10;
+a = 4'b0010; b = 4'b0100;
+#10;
+a = 4'b1010; b= 4'b1010;
+#10;
+a = 4'b1100; b = 4'b0111;
+#10;
+a = 4'b0101; b = 4'b1000;
+#10;
+a = 4'b1011; b = 4'b1010;
+#10;
+a = 4'b0110; b = 4'b0111;
+#10;
+a = 4'b1111; b = 4'b1111;
+#10;
+a = 4'b1111; b = 4'b0000;
+#10;
+a = 4'b0000; b = 4'b1111;
+#10;
+$finish;
+end
+endmodule
