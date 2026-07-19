@@ -57,8 +57,8 @@ This project implements a **UART (Universal Asynchronous Receiver/Transmitter) T
 
 ## Files
 
-- `uart_tx.v` – UART transmitter RTL implementation
-- `uart_tx_tb.v` – Testbench
+- `transmitter.v` – UART transmitter RTL implementation
+- `transmitter_tb.v` – Testbench
 - `waveform.png` – Simulation waveform
 
 ## Tools Used
