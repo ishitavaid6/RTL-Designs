@@ -1,0 +1,69 @@
+module stimulus;
+reg clk;
+reg reset;
+reg wr_en;
+reg rd_en;
+reg [7:0] data_in;
+wire [7:0] data_out;
+wire full;
+wire empty;
+fifo DUT(
+.clk(clk),
+.reset(reset),
+.wr_en(wr_en),
+.rd_en(rd_en),
+.data_in(data_in),
+.data_out(data_out),
+.full(full),
+.empty(empty)
+    );
+
+always #5 clk = ~clk;
+
+initial begin
+clk = 0;
+reset = 1;
+wr_en = 0;
+rd_en = 0;
+data_in = 8'b00000000;
+$display("Time\tWr\tRd\tData_in\tData_out\tFull\tEmpty");
+$monitor("%0t\t%b\t%b\t%0d\t\t%0d\t\t%b\t%b",$time, wr_en, rd_en, data_in, data_out, full, empty);
+#10;
+reset = 0;
+wr_en = 1;
+data_in = 8'd10;
+#10;
+data_in = 8'd20;
+#10;
+data_in = 8'd30;
+#10;
+data_in = 8'd40;
+#10;
+wr_en = 0;
+rd_en = 1;
+#10;
+#10;
+#10;
+#10;
+
+rd_en = 0;
+wr_en = 1;
+data_in = 8'd1;  #10;
+data_in = 8'd2;  #10;
+data_in = 8'd3;  #10;
+data_in = 8'd4;  #10;
+data_in = 8'd5;  #10;
+data_in = 8'd6;  #10;
+data_in = 8'd7;  #10;
+data_in = 8'd8;  #10;
+wr_en = 0;
+
+rd_en = 1;
+repeat(8)
+#10;
+rd_en = 0;
+#20;
+$finish;
+end
+
+endmodule
