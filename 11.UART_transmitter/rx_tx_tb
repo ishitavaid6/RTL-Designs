@@ -1,0 +1,132 @@
+`timescale 1ns/1ps
+module uart_rx_tb;
+
+    localparam CLKS_PER_BIT = 10; 
+
+    reg clk;
+    reg rst;
+    reg        tx_start;
+    reg [7:0]  tx_data;
+    wire       tx_line;
+    wire       tx_busy;
+    wire       tx_done;
+
+    // ---- RX side ----
+    wire [7:0] rx_data;
+    wire       rx_done;
+    wire       rx_busy;
+    wire       rx_error;
+
+    integer error_count;
+    integer check_count;
+
+    
+    uart_tx #(
+        .CLKS_PER_BIT(CLKS_PER_BIT)
+    ) TX_DUT (
+        .clk(clk),
+        .rst(rst),
+        .tx_start(tx_start),
+        .tx_data(tx_data),
+        .tx(tx_line),
+        .tx_busy(tx_busy),
+        .tx_done(tx_done)
+    );
+
+    uart_rx #(
+        .CLKS_PER_BIT(CLKS_PER_BIT)
+    ) RX_DUT (
+        .clk(clk),
+        .rst(rst),
+        .rx(tx_line),
+        .rx_data(rx_data),
+        .rx_done(rx_done),
+        .rx_busy(rx_busy),
+        .rx_error(rx_error)
+    );
+
+    always #5 clk = ~clk;
+
+    task send_and_check(input [7:0] expected_data);
+        begin
+            tx_data  = expected_data;
+            @(posedge clk);
+            #1 tx_start = 1;  
+            @(posedge clk);
+            #1 tx_start = 0;   
+
+
+            wait(rx_done === 1'b1 || rx_error === 1'b1);
+
+            check_count = check_count + 1;
+            if (rx_error) begin
+                error_count = error_count + 1;
+                $display("[%0t] MISMATCH: unexpected framing error for byte %h",
+                          $time, expected_data);
+            end
+            else if (rx_data !== expected_data) begin
+                error_count = error_count + 1;
+                $display("[%0t] MISMATCH: sent %h, RX received %h",
+                          $time, expected_data, rx_data);
+            end
+            else begin
+                $display("[%0t] PASS: sent %h, RX correctly received %h",
+                          $time, expected_data, rx_data);
+            end
+
+            @(posedge clk);
+        end
+    endtask
+
+    initial begin
+        clk      = 0;
+        rst      = 1;
+        tx_start = 0;
+        tx_data  = 8'h00;
+        error_count = 0;
+        check_count = 0;
+
+        #20;
+        rst = 0;
+        #20;
+
+        check_count = check_count + 1;
+        if (rx_busy !== 1'b0 || tx_line !== 1'b1) begin
+            error_count = error_count + 1;
+            $display("[%0t] MISMATCH: post-reset idle state wrong (rx_busy=%b, tx_line=%b)",
+                      $time, rx_busy, tx_line);
+        end else begin
+            $display("[%0t] PASS: post-reset idle state correct", $time);
+        end
+
+        send_and_check(8'hA5);
+        #50;
+        send_and_check(8'h3C);
+        #50;
+        send_and_check(8'h00);
+        #50;
+        send_and_check(8'hFF);
+        #50;
+
+        send_and_check(8'h55);
+        #50;
+        send_and_check(8'hAA);
+
+        #100;
+
+        $display("--------------------------------------------------");
+        if (error_count == 0)
+            $display("TEST PASSED: %0d checks run, 0 mismatches", check_count);
+        else
+            $display("TEST FAILED: %0d checks run, %0d mismatches", check_count, error_count);
+        $display("--------------------------------------------------");
+
+        $finish;
+    end
+
+    initial begin
+        $monitor("Time=%0t | tx_line=%b | rx_busy=%b | rx_done=%b | rx_data=%h | rx_error=%b",
+                  $time, tx_line, rx_busy, rx_done, rx_data, rx_error);
+    end
+
+endmodule
